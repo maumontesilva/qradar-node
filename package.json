@@ -1,0 +1,20 @@
+{
+  "name": "node-red-contrib-qradar",
+  "version": "0.0.1",
+  "description": "Node-RED forQRadar",
+  "dependencies": {
+    "async": "^1.5.2",
+    "express": "^4.13.4",
+    "request": "^2.53.0",
+    "xml2js": "^0.4.6"
+  },
+  "keywords": [
+    "node-red",
+    "qradar"
+  ],
+  "node-red": {
+    "nodes": {
+      "sample": "qradar_node_red/qradar-node-red.js"
+    }
+  }
+}

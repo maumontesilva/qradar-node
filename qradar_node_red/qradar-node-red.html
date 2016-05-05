@@ -1,0 +1,53 @@
+<!-- X-Force Exchange Input Node-->
+<script type="text/javascript">
+	RED.nodes.registerType('QRadar', {
+		category: 'QRadar',
+		color: '#2C6700',
+		defaults: {
+			server: {value: "", required:true, value:'9.98.16.120'},
+			port: {value: "", required:true, value:6443, validate:RED.validators.number()},
+			token: {value: "", required:true},
+			options: {required:true, value:"offenses"},
+      		name: {value:""}
+		},
+    	credentials: {
+			SEC: {type:"text"}
+    	},
+		inputs: 1,
+		outputs: 1,
+		icon: "icons/qradar.png",
+		label: function() {
+			return this.name||"QRAdar";
+		}
+	});
+</script>
+
+<script type="text/x-red" data-template-name="QRadar">
+  <div class="form-row">
+      <label for="node-input-name"><i class="fa fa-tag"></i> Node Name</label>
+      <input type="text" id="node-input-name" placeholder="Name">
+  </div>
+	<div class="form-row">
+		<label for="node-input-server"><i class="icon-tag"></i> Server</label>
+		<input type="text" id="node-input-server" placeholder="Server">
+		<label for="node-input-port"><i class="icon-tag" ></i> Port</label>
+		<input type="text" id="node-input-port" placeholder="Port" style="width:50px">
+	</div>
+	<div class="form-row">
+		<label for="node-input-token"><i class="icon-tag"></i> SEC</label>
+		<input type="text" id="node-input-token" placeholder="SEC">
+	</div>
+	<div class="form-row">
+		<label for="node-input-options"><i class="icon-tag"></i> Options</label>		
+		<select id="node-input-options" placeholder="Options">
+			<option value="local_destination_addresses">local destination address</option>
+			<option value="offense_closing_reasons">offense closing reasons</option>
+			<option value="offenses">offenses</option>
+			<option value="source_addresses">source addresses</option>
+		</select> 
+	</div>
+</script>
+
+<script type="text/x-red" data-help-name="QRadar">
+	<p>QRadar.</p>
+</script>

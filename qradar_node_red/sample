@@ -1,0 +1,9 @@
+MAURO MSG.PAYLOAD:  {"source_addresses":{"filter":{"source_ip":"10.109.137.195"}}}
+
+https://9.98.16.120:6443/api/siem/source_addresses?filter=source_ip%3D%2210.109.137.195%22%20and%20domain_id%3D%220%22
+
+
+
+{"source_addresses":{"filter":{"source_ip":["10.109.137.195","10.40.7.130"]}}}
+
+https://9.98.16.120:6443/api/siem/source_addresses?filter=source_ip%20in%20(%2210.109.137.195%22%2C%20%2210.40.7.130%22%20)
