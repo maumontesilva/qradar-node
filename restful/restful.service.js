@@ -2,8 +2,10 @@
  * Created by maurosil on 24/03/2016.
  */
 
-var express     = require('express');
-var request     = require('request');
+var express = require('express');
+var request = require('request');
+var Log = require('log');
+var logger = new Log('info');
 
 var url;
 var username;
@@ -11,6 +13,7 @@ var password;
 
 var RestfulService = function(protocol, server, port, user, pass) {
   if(!server) {
+      logger.error('server name is not defined.');
       throw 'server name is not defined.';
   }
 
@@ -22,7 +25,7 @@ var RestfulService = function(protocol, server, port, user, pass) {
   }
 };
 
-RestfulService.prototype.sendRequest = function(method, endpoint, body, headers, callback) {
+RestfulService.prototype.sendRequest = function(method, endpoint, stringQuery, body, headers, callback) {
     var queryConfiguration = {
         method: method || 'GET',
         rejectUnauthorized: false //FOR NOW DO NOT CONSIDER CERT
@@ -32,6 +35,10 @@ RestfulService.prototype.sendRequest = function(method, endpoint, body, headers,
 
     if(endpoint) {
         queryConfiguration.url = queryConfiguration.url + endpoint;
+    }
+
+    if(stringQuery) {
+        queryConfiguration.url = queryConfiguration.url + '?' + stringQuery;
     }
 
     if(body) {
@@ -49,7 +56,7 @@ RestfulService.prototype.sendRequest = function(method, endpoint, body, headers,
             queryConfiguration.headers = {Authorization : auth};
         }
     }
-    //console.log('MAURO queryConfiguration ', queryConfiguration);
+    logger.debug('connection configuration: ', queryConfiguration);
     xforceRequest(queryConfiguration, callback);
 };
 
@@ -57,6 +64,11 @@ module.exports = RestfulService;
 
 function xforceRequest(queryConfiguration, cb) {
     request(queryConfiguration, function(err, res, result) {
-        return cb(err, result);
+        if(err) {
+            logger.error('Connection failed due to ', err);
+            return cb(err, null);
+        }
+
+        return cb(err, JSON.parse(result) );
     });
 }

@@ -4,6 +4,10 @@
 
 var async = require('async');
 var RestfulService = require('../restful/restful.service');
+var Database = require('../database/db');
+var lodash = require('lodash');
+var Log = require('log');
+var logger = new Log('info');
 
 var xfeEndpoints = {
   local_destination_addresses: '/api/siem/local_destination_addresses',
@@ -19,15 +23,24 @@ module.exports = function(RED) {
         var sec;
         var username;
         var password;
+        var considerDelta;
+        var maxLastEventFlowSeen;
         var headers = {};
         headers["Accept"] = 'application/json';
         headers["Version"] = '5.0';
+        var stringQuery;
 
         //Setting the node status as ready
         node.status({fill:"blue",shape:"dot",text:"ready"});
         if (config && config.token) {
             headers["SEC"] = config.token;
         }
+
+        if (config && config.range) {
+            headers["Range"] = config.range;
+        }
+
+        considerDelta = config.delta;
 
         var restfulService = new RestfulService('https', config.server, config.port, username, password);
 
@@ -36,14 +49,23 @@ module.exports = function(RED) {
             //Setting the node status as running
             node.status({fill:"green",shape:"dot",text:"running"});
 
+            //console.log('MAURO considerDelta: ', considerDelta );
+            if(considerDelta) {
+                db = new Database();
+                maxLastEventFlowSeen = db.read();
+                if(maxLastEventFlowSeen && JSON.parse(maxLastEventFlowSeen).last_event_flow_seen ) {
+                    stringQuery = 'filter=last_event_flow_seen > ' + JSON.parse(maxLastEventFlowSeen).last_event_flow_seen;
+                }
+            }
+
             var requestResult = [];
-            console.log('MAURO OPTIONS: ', config.options);
-            console.log('MAURO MSG.PAYLOAD: ', JSON.stringify(msg.payload) );
+            logger.debug('config.option ', config.options);
+            logger.debug('msg.payload ', JSON.stringify(msg.payload));
             var data = msg.payload[config.options]; //It should contains qradar parameters
-            console.log('MAURO DATA: ', data);
+            //console.log('MAURO DATA: ', data);
             if(data && data.length && data.length > 0) {
                 async.each(data, function(item, cb) {
-                    restfulService.sendRequest('GET', xfeEndpoints[config.options] + '/' + item, null, headers,
+                    restfulService.sendRequest('GET', xfeEndpoints[config.options] + '/' + item, null,null, headers,
                                             function(error, result) {
                         if(error) {
                             cb(err);
@@ -56,20 +78,25 @@ module.exports = function(RED) {
                     if(err) {
                         //Setting the node status as failed
                         node.status({fill:"red",shape:"dot",text:"failed"});
-
-                        //console.log('RESTFUL ERROR: ', error);
                     }
 
                     sendNodeResponse(node, requestResult);
                 });
             } else {
-                restfulService.sendRequest('GET', xfeEndpoints[config.options], null,
+                restfulService.sendRequest('GET', xfeEndpoints[config.options], stringQuery, null,
                                                             headers, function(error, result) {
                         if(error) {
                             //Setting the node status as failed
                             node.status({fill:"red",shape:"dot",text:"failed"});
                         } else {
-                            //console.log('MAURO OK: ', result);
+                            if(considerDelta) {
+                                maxLastEventFlowSeen = lodash.maxBy(result, 'last_event_flow_seen');
+
+                                if(maxLastEventFlowSeen) {
+                                    db.write(maxLastEventFlowSeen);
+                                }
+                            }
+
                             sendNodeResponse(node, result);
                         }
                 });
@@ -86,7 +113,6 @@ module.exports = function(RED) {
 function sendNodeResponse(node, result) {
     var msg = {};
 
-    //console.log('RESTFUL OK: ', result);
     msg.payload = result;
     //Setting the node status as ready
     node.status({fill:"blue",shape:"dot",text:"ready"});
